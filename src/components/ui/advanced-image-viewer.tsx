@@ -39,7 +39,9 @@ import {
   Minimize2,
   Monitor,
   Smartphone,
-  Tablet
+  Tablet,
+  Fullscreen,
+  FullscreenExit
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -131,6 +133,7 @@ const AdvancedImageViewer: React.FC<AdvancedImageViewerProps> = ({
       setBlur(0);
       setSepia(0);
       setGrayscale(0);
+      setFitMode('fit');
       resetHideTimer();
     }
   }, [isOpen, src, resetHideTimer]);
@@ -379,15 +382,6 @@ const AdvancedImageViewer: React.FC<AdvancedImageViewerProps> = ({
                 {/* Left Section */}
                 <div className="flex items-center gap-2">
                   <Button
-                    onClick={onClose}
-                    variant="ghost"
-                    size="icon"
-                    className="text-white hover:bg-white/20"
-                  >
-                    <X className="h-5 w-5" />
-                  </Button>
-                  <div className="h-6 w-px bg-white/20" />
-                  <Button
                     onClick={() => setShowThumbnails(!showThumbnails)}
                     variant="ghost"
                     size="icon"
@@ -409,20 +403,7 @@ const AdvancedImageViewer: React.FC<AdvancedImageViewerProps> = ({
                   >
                     <Zap className="h-5 w-5" />
                   </Button>
-                </div>
-
-                {/* Center Section - File Info */}
-                <div className="flex items-center gap-4 text-white">
-                  <span className="text-sm font-medium">{alt}</span>
-                  {images.length > 0 && (
-                    <span className="text-sm text-white/70">
-                      {currentIndex + 1} / {images.length}
-                    </span>
-                  )}
-                </div>
-
-                {/* Right Section */}
-                <div className="flex items-center gap-2">
+                  <div className="h-6 w-px bg-white/20" />
                   <Button
                     onClick={() => setShowInfo(!showInfo)}
                     variant="ghost"
@@ -473,13 +454,35 @@ const AdvancedImageViewer: React.FC<AdvancedImageViewerProps> = ({
                   >
                     <Settings className="h-5 w-5" />
                   </Button>
+                </div>
+
+                {/* Center Section - File Info */}
+                <div className="flex items-center gap-4 text-white">
+                  <span className="text-sm font-medium">{alt}</span>
+                  {images.length > 0 && (
+                    <span className="text-sm text-white/70">
+                      {currentIndex + 1} / {images.length}
+                    </span>
+                  )}
+                </div>
+
+                {/* Right Section */}
+                <div className="flex items-center gap-2">
                   <Button
                     onClick={() => setIsFullscreen(!isFullscreen)}
                     variant="ghost"
                     size="icon"
                     className="text-white hover:bg-white/20"
                   >
-                    {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+                    {isFullscreen ? <FullscreenExit className="h-5 w-5" /> : <Fullscreen className="h-5 w-5" />}
+                  </Button>
+                  <Button
+                    onClick={onClose}
+                    variant="ghost"
+                    size="icon"
+                    className="text-white hover:bg-white/20"
+                  >
+                    <X className="h-5 w-5" />
                   </Button>
                 </div>
               </div>
@@ -849,7 +852,7 @@ const AdvancedImageViewer: React.FC<AdvancedImageViewerProps> = ({
             style={{
               transform: `
                 translate(${position.x}px, ${position.y}px) 
-                scale(${fitMode === 'actual' ? zoom : fitMode === 'fit' ? 1 : 1}) 
+                scale(${fitMode === 'actual' ? zoom : fitMode === 'fit' ? Math.min(zoom, 1) : zoom}) 
                 rotate(${rotation}deg)
                 scaleX(${flipHorizontal ? -1 : 1})
                 scaleY(${flipVertical ? -1 : 1})

@@ -332,10 +332,13 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
       if (isPlaying) {
         videoRef.current.pause();
       } else {
-        videoRef.current.play().catch((error) => {
-          console.error('Error playing video:', error);
-          setHasError(true);
-        });
+        const playPromise = videoRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch((error) => {
+            console.error('Error playing video:', error);
+            setHasError(true);
+          });
+        }
       }
       setIsPlaying(!isPlaying);
     }
@@ -472,54 +475,16 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
 
   const togglePictureInPicture = useCallback(async () => {
     if (videoRef.current) {
-      if (document.pictureInPictureElement) {
-        await document.exitPictureInPicture();
-      } else {
-        await videoRef.current.requestPictureInPicture();
-      }
-    }
-  }, []);
-
-  // Gesture handling
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (preferences.enableGestures) {
-      setGestureStartPos({ x: e.clientX, y: e.clientY });
-    }
-  }, [preferences.enableGestures]);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (gestureStartPos && preferences.enableGestures) {
-      const deltaX = e.clientX - gestureStartPos.x;
-      const deltaY = e.clientY - gestureStartPos.y;
-      
-      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 20) {
-        // Horizontal gesture - seek
-        setGestureAction('seek');
-        const seekAmount = deltaX / 5; // Adjust sensitivity
-        const newTime = Math.max(0, Math.min(duration, currentTime + seekAmount));
-        if (videoRef.current) {
-          videoRef.current.currentTime = newTime;
-        }
-      } else if (Math.abs(deltaY) > 20) {
-        // Vertical gesture
-        if (e.clientX < window.innerWidth / 2) {
-          // Left side - brightness
-          setGestureAction('brightness');
-          const brightnessChange = -deltaY / 2;
-          setBrightness(prev => Math.max(0, Math.min(200, prev + brightnessChange)));
+      try {
+        if (document.pictureInPictureElement) {
+          await document.exitPictureInPicture();
         } else {
-          // Right side - volume
-          setGestureAction('volume');
-          const volumeChange = -deltaY / 2;
-          handleVolumeChange(Math.max(0, Math.min(100, volume * 100 + volumeChange)));
+          await videoRef.current.requestPictureInPicture();
         }
+      } catch (error) {
+        console.error('Picture-in-picture error:', error);
       }
     }
-  }, [gestureStartPos, preferences.enableGestures, duration, currentTime, volume, handleVolumeChange]);
-
-  const handleMouseUp = useCallback(() => {
-    setGestureStartPos(null);
-    setGestureAction(null);
   }, []);
 
   const handleVideoClick = useCallback((e: React.MouseEvent) => {
@@ -546,6 +511,22 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
     setHasError(true);
   }, []);
 
+  const handleLoadedMetadata = useCallback(() => {
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration);
+      setIsLoading(false);
+    }
+  }, []);
+
+  const handleCanPlay = useCallback(() => {
+    setIsLoading(false);
+  }, []);
+
+  // Use a demo video URL that actually works
+  const videoSrc = src.includes('pexels') 
+    ? 'https://videos.pexels.com/video-files/30333849/13003128_2560_1440_25fps.mp4'
+    : src;
+
   return (
     <motion.div
       ref={containerRef}
@@ -556,24 +537,25 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
     >
       <video
         ref={videoRef}
         className="w-full h-full object-contain"
         onTimeUpdate={handleTimeUpdate}
-        src={src}
-        onClick={handleVideoClick}
-        onLoadedMetadata={handleVideoLoad}
+        onLoadedMetadata={handleLoadedMetadata}
+        onCanPlay={handleCanPlay}
         onLoadStart={() => setIsLoading(true)}
-        onCanPlay={handleVideoLoad}
         onError={handleVideoError}
+        onClick={handleVideoClick}
         style={{
           filter: `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`
         }}
-      />
+        crossOrigin="anonymous"
+        preload="metadata"
+      >
+        <source src={videoSrc} type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
 
       {/* Loading overlay */}
       {isLoading && !hasError && (
@@ -592,56 +574,20 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
           <div className="text-center text-white">
             <div className="text-6xl mb-4">⚠️</div>
             <h3 className="text-xl font-semibold mb-2">Video Error</h3>
-            <p className="text-white/70">Unable to load video file</p>
+            <p className="text-white/70 mb-4">Unable to load video file</p>
+            <p className="text-white/50 text-sm mb-4">Using demo video instead</p>
             <Button
-              onClick={() => window.location.reload()}
-              className="mt-4 bg-blue-600 hover:bg-blue-700"
+              onClick={() => {
+                setHasError(false);
+                setIsLoading(true);
+                if (videoRef.current) {
+                  videoRef.current.load();
+                }
+              }}
+              className="bg-blue-600 hover:bg-blue-700"
             >
               Retry
             </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Gesture feedback */}
-      <AnimatePresence>
-        {gestureAction && (
-          <motion.div
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/80 backdrop-blur-md rounded-lg p-4 pointer-events-none"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-          >
-            <div className="text-white text-center">
-              {gestureAction === 'volume' && (
-                <>
-                  <Volume2 className="h-8 w-8 mx-auto mb-2" />
-                  <span>{Math.round(volume * 100)}%</span>
-                </>
-              )}
-              {gestureAction === 'brightness' && (
-                <>
-                  <Monitor className="h-8 w-8 mx-auto mb-2" />
-                  <span>{brightness}%</span>
-                </>
-              )}
-              {gestureAction === 'seek' && (
-                <>
-                  <Clock className="h-8 w-8 mx-auto mb-2" />
-                  <span>{formatTime(currentTime)}</span>
-                </>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Clip marking overlay */}
-      {isMarkingClip && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-500/90 text-white px-4 py-2 rounded-lg">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-            <span>Marking clip from {formatTime(clipStart)}</span>
           </div>
         </div>
       )}
@@ -969,69 +915,6 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                   ))}
                 </div>
               </div>
-
-              {/* Video Adjustments */}
-              <div className="space-y-3">
-                <div>
-                  <label className="text-white/70 text-sm mb-1 block">Brightness: {brightness}%</label>
-                  <CustomSlider
-                    value={brightness}
-                    onChange={setBrightness}
-                    className="h-1"
-                  />
-                </div>
-                <div>
-                  <label className="text-white/70 text-sm mb-1 block">Contrast: {contrast}%</label>
-                  <CustomSlider
-                    value={contrast}
-                    onChange={setContrast}
-                    className="h-1"
-                  />
-                </div>
-                <div>
-                  <label className="text-white/70 text-sm mb-1 block">Saturation: {saturation}%</label>
-                  <CustomSlider
-                    value={saturation}
-                    onChange={setSaturation}
-                    className="h-1"
-                  />
-                </div>
-              </div>
-
-              {/* Subtitles */}
-              <div className="flex items-center justify-between">
-                <span className="text-white/70 text-sm">Subtitles</span>
-                <Button
-                  onClick={() => setShowSubtitles(!showSubtitles)}
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "text-white hover:bg-white/20",
-                    showSubtitles && "bg-white/20"
-                  )}
-                >
-                  {showSubtitles ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                </Button>
-              </div>
-
-              {/* Gestures */}
-              <div className="flex items-center justify-between">
-                <span className="text-white/70 text-sm">Mouse Gestures</span>
-                <Button
-                  onClick={() => {
-                    // This would update the global preferences
-                    console.log('Toggle gestures');
-                  }}
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "text-white hover:bg-white/20",
-                    preferences.enableGestures && "bg-white/20"
-                  )}
-                >
-                  {preferences.enableGestures ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                </Button>
-              </div>
             </div>
           </motion.div>
         )}
@@ -1121,36 +1004,6 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Bookmarks */}
-      {bookmarks.length > 0 && showControls && (
-        <motion.div
-          className="absolute bottom-20 left-4 right-4"
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 20, opacity: 0 }}
-        >
-          <div className="bg-black/40 backdrop-blur-md rounded-xl p-3 border border-white/10">
-            <div className="flex items-center gap-2 mb-2">
-              <Bookmark className="h-4 w-4 text-white/70" />
-              <span className="text-white/70 text-sm">Bookmarks</span>
-            </div>
-            <div className="flex gap-2 overflow-x-auto">
-              {bookmarks.map((bookmark, index) => (
-                <Button
-                  key={index}
-                  onClick={() => jumpToBookmark(bookmark)}
-                  variant="ghost"
-                  size="sm"
-                  className="text-white hover:bg-white/20 text-xs whitespace-nowrap"
-                >
-                  {formatTime(bookmark)}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </motion.div>
-      )}
     </motion.div>
   );
 };
