@@ -1,31 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import {
-  Search,
-  Filter,
-  Grid,
-  List,
-  MoreVertical,
-  Upload,
-  Download,
-  RefreshCw,
-  Settings,
-  User,
-  Bell,
-  X,
-  Sliders,
-  Layout,
-  Palette,
-  Monitor,
-  Zap,
-  Columns,
-  Rows,
-  Spacing,
-  Eye,
-  EyeOff,
-  ToggleLeft,
-  ToggleRight
-} from 'lucide-react';
+import { Search, Filter, Grid, List, MoreVertical, Upload, Download, RefreshCw, Settings, User, Bell, X, Sliders, Layout, Palette, Monitor, Zap, Columns, Rows, Space as Spacing, Eye, EyeOff, ToggleLeft, ToggleRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import FileUploadZone from '@/components/upload/FileUploadZone';
