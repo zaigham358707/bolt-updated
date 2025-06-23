@@ -200,8 +200,6 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [buffered, setBuffered] = useState(0);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
-  const [gestureStartPos, setGestureStartPos] = useState<{x: number, y: number} | null>(null);
-  const [gestureAction, setGestureAction] = useState<'volume' | 'brightness' | 'seek' | null>(null);
   const [previewTime, setPreviewTime] = useState<number | null>(null);
   const [hasError, setHasError] = useState(false);
 
@@ -216,9 +214,11 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
     }
     setShowControls(true);
     hideControlsTimer.current = setTimeout(() => {
-      setShowControls(false);
+      if (!showSettings && !showClipDialog) {
+        setShowControls(false);
+      }
     }, 3000);
-  }, []);
+  }, [showSettings, showClipDialog]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -501,7 +501,15 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
     }
   }, [togglePlay, toggleFullscreen]);
 
-  const handleVideoLoad = useCallback(() => {
+  const handleLoadedMetadata = useCallback(() => {
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration);
+      setIsLoading(false);
+      setHasError(false);
+    }
+  }, []);
+
+  const handleCanPlay = useCallback(() => {
     setIsLoading(false);
     setHasError(false);
   }, []);
@@ -511,21 +519,8 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
     setHasError(true);
   }, []);
 
-  const handleLoadedMetadata = useCallback(() => {
-    if (videoRef.current) {
-      setDuration(videoRef.current.duration);
-      setIsLoading(false);
-    }
-  }, []);
-
-  const handleCanPlay = useCallback(() => {
-    setIsLoading(false);
-  }, []);
-
-  // Use a demo video URL that actually works
-  const videoSrc = src.includes('pexels') 
-    ? 'https://videos.pexels.com/video-files/30333849/13003128_2560_1440_25fps.mp4'
-    : src;
+  // Use a working demo video URL
+  const videoSrc = 'https://videos.pexels.com/video-files/30333849/13003128_2560_1440_25fps.mp4';
 
   return (
     <motion.div
@@ -588,6 +583,16 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
             >
               Retry
             </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Clip marking overlay */}
+      {isMarkingClip && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-500/90 text-white px-4 py-2 rounded-lg">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+            <span>Marking clip from {formatTime(clipStart)}</span>
           </div>
         </div>
       )}
@@ -673,7 +678,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                 size="icon"
                 className="text-white hover:bg-white/20 hover:text-white backdrop-blur-sm"
               >
-                <Maximize className="h-5 w-5" />
+                {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
               </Button>
             </div>
           </motion.div>

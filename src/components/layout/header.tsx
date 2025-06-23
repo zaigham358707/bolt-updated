@@ -17,12 +17,20 @@ import {
   Layout,
   Palette,
   Monitor,
-  Zap
+  Zap,
+  Columns,
+  Rows,
+  Spacing,
+  Eye,
+  EyeOff,
+  ToggleLeft,
+  ToggleRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import FileUploadZone from '@/components/upload/FileUploadZone';
 import AppSettingsPanel from '@/components/settings/AppSettingsPanel';
+import { useAppStore } from '@/store/useAppStore';
 
 interface HeaderProps {
   viewMode: 'grid' | 'list';
@@ -47,7 +55,8 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showAppSettings, setShowAppSettings] = useState(false);
-  const [showQuickSettings, setShowQuickSettings] = useState(false);
+  const [showGridSettings, setShowGridSettings] = useState(false);
+  const { preferences, updatePreferences } = useAppStore();
 
   const handleUpload = () => {
     setShowUploadModal(true);
@@ -170,10 +179,10 @@ const Header: React.FC<HeaderProps> = ({
             <Bell className="h-4 w-4" />
           </Button>
 
-          {/* Quick Settings Dropdown */}
+          {/* Grid Settings Dropdown */}
           <div className="relative">
             <Button
-              onClick={() => setShowQuickSettings(!showQuickSettings)}
+              onClick={() => setShowGridSettings(!showGridSettings)}
               variant="ghost"
               size="icon"
               className="text-white/70 hover:bg-white/10 hover:text-white"
@@ -181,59 +190,128 @@ const Header: React.FC<HeaderProps> = ({
               <Sliders className="h-4 w-4" />
             </Button>
 
-            {showQuickSettings && (
+            {showGridSettings && (
               <motion.div
-                className="absolute top-12 right-0 bg-gray-900 rounded-xl border border-white/10 p-4 min-w-[250px] z-50"
+                className="absolute top-12 right-0 bg-gray-900 rounded-xl border border-white/10 p-4 min-w-[300px] z-50"
                 initial={{ opacity: 0, scale: 0.9, y: -10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: -10 }}
               >
-                <h3 className="text-white font-medium mb-3">Quick Settings</h3>
-                <div className="space-y-2">
-                  <Button
-                    onClick={() => {
-                      setShowAppSettings(true);
-                      setShowQuickSettings(false);
-                    }}
-                    variant="ghost"
-                    className="w-full justify-start text-white/70 hover:bg-white/10 hover:text-white"
-                  >
-                    <Layout className="h-4 w-4 mr-2" />
-                    Interface Settings
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setShowAppSettings(true);
-                      setShowQuickSettings(false);
-                    }}
-                    variant="ghost"
-                    className="w-full justify-start text-white/70 hover:bg-white/10 hover:text-white"
-                  >
-                    <Grid className="h-4 w-4 mr-2" />
-                    Grid Settings
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setShowAppSettings(true);
-                      setShowQuickSettings(false);
-                    }}
-                    variant="ghost"
-                    className="w-full justify-start text-white/70 hover:bg-white/10 hover:text-white"
-                  >
-                    <Palette className="h-4 w-4 mr-2" />
-                    Appearance
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setShowAppSettings(true);
-                      setShowQuickSettings(false);
-                    }}
-                    variant="ghost"
-                    className="w-full justify-start text-white/70 hover:bg-white/10 hover:text-white"
-                  >
-                    <Zap className="h-4 w-4 mr-2" />
-                    Performance
-                  </Button>
+                <h3 className="text-white font-medium mb-4 flex items-center gap-2">
+                  <Grid className="h-4 w-4" />
+                  Grid Layout Settings
+                </h3>
+                
+                <div className="space-y-4">
+                  {/* Grid Columns */}
+                  <div>
+                    <label className="text-white/70 text-sm mb-2 block">Columns: {preferences.gridColumns}</label>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={() => updatePreferences({ gridColumns: Math.max(1, preferences.gridColumns - 1) })}
+                        variant="ghost"
+                        size="sm"
+                        className="text-white/70 hover:bg-white/10"
+                      >
+                        -
+                      </Button>
+                      <div className="flex-1 bg-white/10 rounded-full h-2 relative">
+                        <div 
+                          className="bg-blue-500 h-full rounded-full transition-all"
+                          style={{ width: `${(preferences.gridColumns / 8) * 100}%` }}
+                        />
+                      </div>
+                      <Button
+                        onClick={() => updatePreferences({ gridColumns: Math.min(8, preferences.gridColumns + 1) })}
+                        variant="ghost"
+                        size="sm"
+                        className="text-white/70 hover:bg-white/10"
+                      >
+                        +
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Grid Size */}
+                  <div>
+                    <label className="text-white/70 text-sm mb-2 block">Grid Size</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {['small', 'medium', 'large'].map((size) => (
+                        <Button
+                          key={size}
+                          onClick={() => updatePreferences({ gridSize: size as any })}
+                          variant="ghost"
+                          size="sm"
+                          className={cn(
+                            "text-white/70 hover:bg-white/10",
+                            preferences.gridSize === size && "bg-white/20 text-white"
+                          )}
+                        >
+                          <span className="capitalize">{size}</span>
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Display Options */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-white/70 text-sm">Show Thumbnails</span>
+                      <Button
+                        onClick={() => updatePreferences({ showThumbnails: !preferences.showThumbnails })}
+                        variant="ghost"
+                        size="sm"
+                        className="text-white/70 hover:bg-white/10"
+                      >
+                        {preferences.showThumbnails ? <ToggleRight className="h-4 w-4 text-green-400" /> : <ToggleLeft className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <span className="text-white/70 text-sm">Show File Sizes</span>
+                      <Button
+                        onClick={() => updatePreferences({ showFileSizes: !preferences.showFileSizes })}
+                        variant="ghost"
+                        size="sm"
+                        className="text-white/70 hover:bg-white/10"
+                      >
+                        {preferences.showFileSizes ? <ToggleRight className="h-4 w-4 text-green-400" /> : <ToggleLeft className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <span className="text-white/70 text-sm">Hover Preview</span>
+                      <Button
+                        onClick={() => updatePreferences({ enableHoverPreview: !preferences.enableHoverPreview })}
+                        variant="ghost"
+                        size="sm"
+                        className="text-white/70 hover:bg-white/10"
+                      >
+                        {preferences.enableHoverPreview ? <ToggleRight className="h-4 w-4 text-green-400" /> : <ToggleLeft className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Thumbnail Quality */}
+                  <div>
+                    <label className="text-white/70 text-sm mb-2 block">Thumbnail Quality</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {['low', 'medium', 'high'].map((quality) => (
+                        <Button
+                          key={quality}
+                          onClick={() => updatePreferences({ thumbnailQuality: quality as any })}
+                          variant="ghost"
+                          size="sm"
+                          className={cn(
+                            "text-white/70 hover:bg-white/10",
+                            preferences.thumbnailQuality === quality && "bg-white/20 text-white"
+                          )}
+                        >
+                          <span className="capitalize">{quality}</span>
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             )}
