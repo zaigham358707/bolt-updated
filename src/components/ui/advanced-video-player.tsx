@@ -36,7 +36,9 @@ import {
   FastForward,
   Rewind,
   Square,
-  X
+  X,
+  Fullscreen,
+  FullscreenExit
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -63,6 +65,7 @@ interface VideoClip {
 
 interface AdvancedVideoPlayerProps {
   src: string;
+  file?: any;
   onAddToFavorites?: (clip: VideoClip) => void;
   onSaveClip?: (clip: VideoClip) => void;
   onClose?: () => void;
@@ -166,6 +169,7 @@ const CustomSlider = ({
 
 const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({ 
   src, 
+  file,
   onAddToFavorites, 
   onSaveClip,
   onClose 
@@ -202,6 +206,9 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [previewTime, setPreviewTime] = useState<number | null>(null);
   const [hasError, setHasError] = useState(false);
+  const [gestureStartX, setGestureStartX] = useState(0);
+  const [gestureStartY, setGestureStartY] = useState(0);
+  const [isGesturing, setIsGesturing] = useState(false);
 
   // Auto-hide controls timer
   const hideControlsTimer = useRef<NodeJS.Timeout>();
@@ -214,11 +221,11 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
     }
     setShowControls(true);
     hideControlsTimer.current = setTimeout(() => {
-      if (!showSettings && !showClipDialog) {
+      if (!showSettings && !showClipDialog && !isFullscreen) {
         setShowControls(false);
       }
     }, 3000);
-  }, [showSettings, showClipDialog]);
+  }, [showSettings, showClipDialog, isFullscreen]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -487,6 +494,42 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
     }
   }, []);
 
+  // Mouse gesture handlers
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (preferences.enableGestures) {
+      setGestureStartX(e.clientX);
+      setGestureStartY(e.clientY);
+      setIsGesturing(true);
+    }
+  }, [preferences.enableGestures]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (isGesturing && preferences.enableGestures) {
+      const deltaX = e.clientX - gestureStartX;
+      const deltaY = e.clientY - gestureStartY;
+      
+      // Horizontal gesture for seeking
+      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+        const seekAmount = deltaX > 0 ? 10 : -10;
+        if (videoRef.current) {
+          videoRef.current.currentTime += seekAmount;
+        }
+        setGestureStartX(e.clientX);
+      }
+      
+      // Vertical gesture for volume
+      if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 50) {
+        const volumeChange = deltaY > 0 ? -10 : 10;
+        handleVolumeChange(Math.max(0, Math.min(100, volume * 100 + volumeChange)));
+        setGestureStartY(e.clientY);
+      }
+    }
+  }, [isGesturing, gestureStartX, gestureStartY, preferences.enableGestures, volume, handleVolumeChange]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsGesturing(false);
+  }, []);
+
   const handleVideoClick = useCallback((e: React.MouseEvent) => {
     if (e.detail === 1) {
       // Single click - toggle play/pause
@@ -519,19 +562,31 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
     setHasError(true);
   }, []);
 
-  // Use a working demo video URL
-  const videoSrc = 'https://videos.pexels.com/video-files/30333849/13003128_2560_1440_25fps.mp4';
+  // Get video source - use file URL if available, otherwise fallback
+  const getVideoSource = () => {
+    if (file?.metadata?.fileUrl) {
+      return file.metadata.fileUrl;
+    }
+    if (src && src !== 'placeholder') {
+      return src;
+    }
+    // Fallback to demo video
+    return 'https://videos.pexels.com/video-files/30333849/13003128_2560_1440_25fps.mp4';
+  };
 
   return (
     <motion.div
       ref={containerRef}
       className={cn(
         "relative w-full mx-auto rounded-xl overflow-hidden bg-black shadow-2xl",
-        isFullscreen ? "h-screen w-screen rounded-none" : "h-[80vh] max-w-full aspect-video"
+        isFullscreen ? "h-screen w-screen rounded-none fixed inset-0 z-50" : "h-[90vh] max-w-full"
       )}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
     >
       <video
         ref={videoRef}
@@ -547,8 +602,9 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
         }}
         crossOrigin="anonymous"
         preload="metadata"
+        playsInline
       >
-        <source src={videoSrc} type="video/mp4" />
+        <source src={getVideoSource()} type="video/mp4" />
         Your browser does not support the video tag.
       </video>
 
@@ -570,7 +626,6 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
             <div className="text-6xl mb-4">⚠️</div>
             <h3 className="text-xl font-semibold mb-2">Video Error</h3>
             <p className="text-white/70 mb-4">Unable to load video file</p>
-            <p className="text-white/50 text-sm mb-4">Using demo video instead</p>
             <Button
               onClick={() => {
                 setHasError(false);
@@ -618,22 +673,6 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
             exit={{ y: -20, opacity: 0 }}
           >
             <div className="flex items-center gap-2">
-              {onClose && (
-                <Button
-                  onClick={onClose}
-                  variant="ghost"
-                  size="icon"
-                  className="text-white hover:bg-white/20 hover:text-white backdrop-blur-sm"
-                >
-                  <X className="h-5 w-5" />
-                </Button>
-              )}
-              <span className="text-white/70 text-sm">
-                {formatTime(currentTime)} / {formatTime(duration)}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
               <Button
                 onClick={addBookmark}
                 variant="ghost"
@@ -678,8 +717,24 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                 size="icon"
                 className="text-white hover:bg-white/20 hover:text-white backdrop-blur-sm"
               >
-                {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+                {isFullscreen ? <FullscreenExit className="h-5 w-5" /> : <Fullscreen className="h-5 w-5" />}
               </Button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-white/70 text-sm">
+                {formatTime(currentTime)} / {formatTime(duration)}
+              </span>
+              {onClose && (
+                <Button
+                  onClick={onClose}
+                  variant="ghost"
+                  size="icon"
+                  className="text-white hover:bg-white/20 hover:text-white backdrop-blur-sm"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              )}
             </div>
           </motion.div>
         )}
@@ -918,6 +973,51 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                       {q}
                     </Button>
                   ))}
+                </div>
+              </div>
+
+              {/* Video Adjustments */}
+              <div>
+                <label className="text-white/70 text-sm mb-2 block">Video Adjustments</label>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-white/60 text-sm">Brightness</span>
+                    <span className="text-white text-sm">{brightness}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="50"
+                    max="150"
+                    value={brightness}
+                    onChange={(e) => setBrightness(Number(e.target.value))}
+                    className="w-full"
+                  />
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-white/60 text-sm">Contrast</span>
+                    <span className="text-white text-sm">{contrast}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="50"
+                    max="150"
+                    value={contrast}
+                    onChange={(e) => setContrast(Number(e.target.value))}
+                    className="w-full"
+                  />
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-white/60 text-sm">Saturation</span>
+                    <span className="text-white text-sm">{saturation}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="200"
+                    value={saturation}
+                    onChange={(e) => setSaturation(Number(e.target.value))}
+                    className="w-full"
+                  />
                 </div>
               </div>
             </div>

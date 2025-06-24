@@ -15,7 +15,7 @@ import AdvancedImageViewer from './components/ui/advanced-image-viewer';
 import FavoriteClipsViewer from './components/ui/favorite-clips-viewer';
 import AdvancedCategorization from './components/ui/advanced-categorization';
 import AICategorizationPanel from './components/ai/AICategorizationPanel';
-import SettingsPanel from './components/settings/SettingsPanel';
+import AppSettingsPanel from './components/settings/AppSettingsPanel';
 
 import { useAppStore } from './store/useAppStore';
 import { FileItem } from './components/file-grid/file-card';
@@ -263,6 +263,7 @@ function App() {
             onShowCategorization={() => setShowCategorization(true)}
             onShowAnalytics={() => setShowAnalytics(true)}
             onShowAICategorization={handleShowAICategorization}
+            onShowSettings={() => setShowSettings(true)}
           />
 
           {/* Main Content */}
@@ -331,7 +332,8 @@ function App() {
               exit={{ opacity: 0 }}
             >
               <AdvancedVideoPlayer
-                src={currentMedia.thumbnail || 'https://videos.pexels.com/video-files/30333849/13003128_2560_1440_25fps.mp4'}
+                src={currentMedia.metadata?.fileUrl || currentMedia.thumbnail || ''}
+                file={currentMedia}
                 onAddToFavorites={handleAddToFavorites}
                 onSaveClip={handleSaveClip}
                 onClose={() => setShowVideoPlayer(false)}
@@ -376,7 +378,7 @@ function App() {
         {/* Settings Panel */}
         <AnimatePresence>
           {showSettings && (
-            <SettingsPanel
+            <AppSettingsPanel
               isOpen={showSettings}
               onClose={() => setShowSettings(false)}
             />

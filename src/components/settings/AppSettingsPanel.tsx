@@ -37,7 +37,12 @@ import {
   FileText,
   Sliders,
   ToggleLeft,
-  ToggleRight
+  ToggleRight,
+  HardDrive,
+  Cpu,
+  MemoryStick,
+  Gauge,
+  Activity
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -310,6 +315,13 @@ const AppSettingsPanel: React.FC<AppSettingsPanelProps> = ({ isOpen, onClose }) 
                       label="Show Thumbnails"
                       description="Display preview images for files"
                     />
+
+                    <ToggleSwitch
+                      checked={preferences.showMetadata}
+                      onChange={(checked) => updatePreferences({ showMetadata: checked })}
+                      label="Show Metadata"
+                      description="Display file metadata information"
+                    />
                   </div>
                 </div>
 
@@ -361,6 +373,26 @@ const AppSettingsPanel: React.FC<AppSettingsPanelProps> = ({ isOpen, onClose }) 
                       step={1}
                     />
                     
+                    <CustomSlider
+                      label="Card Spacing"
+                      value={preferences.cardSpacing}
+                      onChange={(value) => updatePreferences({ cardSpacing: value })}
+                      min={8}
+                      max={32}
+                      step={2}
+                      unit="px"
+                    />
+
+                    <CustomSlider
+                      label="Border Radius"
+                      value={preferences.borderRadius}
+                      onChange={(value) => updatePreferences({ borderRadius: value })}
+                      min={0}
+                      max={24}
+                      step={2}
+                      unit="px"
+                    />
+                    
                     <div>
                       <label className="text-white/70 text-sm mb-2 block">Grid Size</label>
                       <div className="grid grid-cols-3 gap-2">
@@ -405,6 +437,23 @@ const AppSettingsPanel: React.FC<AppSettingsPanelProps> = ({ isOpen, onClose }) 
                         ))}
                       </div>
                     </div>
+
+                    <CustomSlider
+                      label="Max Thumbnail Size"
+                      value={preferences.maxThumbnailSize}
+                      onChange={(value) => updatePreferences({ maxThumbnailSize: value })}
+                      min={200}
+                      max={800}
+                      step={50}
+                      unit="px"
+                    />
+
+                    <ToggleSwitch
+                      checked={preferences.preloadThumbnails}
+                      onChange={(checked) => updatePreferences({ preloadThumbnails: checked })}
+                      label="Preload Thumbnails"
+                      description="Load thumbnails in advance for better performance"
+                    />
                   </div>
                 </div>
 
@@ -557,6 +606,13 @@ const AppSettingsPanel: React.FC<AppSettingsPanelProps> = ({ isOpen, onClose }) 
                   <h3 className="text-lg font-semibold text-white mb-4">Rendering</h3>
                   <div className="space-y-3">
                     <ToggleSwitch
+                      checked={preferences.enableVirtualization}
+                      onChange={(checked) => updatePreferences({ enableVirtualization: checked })}
+                      label="Enable Virtualization"
+                      description="Use virtual scrolling for better performance with large file lists"
+                    />
+
+                    <ToggleSwitch
                       checked={preferences.enableAnimations}
                       onChange={(checked) => updatePreferences({ enableAnimations: checked })}
                       label="Enable Animations"
@@ -581,6 +637,32 @@ const AppSettingsPanel: React.FC<AppSettingsPanelProps> = ({ isOpen, onClose }) 
                       label="Enable Backups"
                       description="Create automatic backups of your data"
                     />
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-4">System Resources</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 border border-white/10 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Cpu className="h-5 w-5 text-blue-400" />
+                        <span className="text-white">CPU Usage</span>
+                      </div>
+                      <div className="w-full bg-white/10 rounded-full h-2">
+                        <div className="bg-blue-500 h-2 rounded-full" style={{ width: '45%' }} />
+                      </div>
+                      <p className="text-white/60 text-sm mt-1">45% - Normal</p>
+                    </div>
+                    <div className="p-4 border border-white/10 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <MemoryStick className="h-5 w-5 text-green-400" />
+                        <span className="text-white">Memory Usage</span>
+                      </div>
+                      <div className="w-full bg-white/10 rounded-full h-2">
+                        <div className="bg-green-500 h-2 rounded-full" style={{ width: '62%' }} />
+                      </div>
+                      <p className="text-white/60 text-sm mt-1">62% - Good</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -611,6 +693,10 @@ const AppSettingsPanel: React.FC<AppSettingsPanelProps> = ({ isOpen, onClose }) 
                         <div className="text-white/60">Grid View</div>
                         <div className="text-white/70">Ctrl + 2</div>
                         <div className="text-white/60">List View</div>
+                        <div className="text-white/70">Space</div>
+                        <div className="text-white/60">Play/Pause</div>
+                        <div className="text-white/70">F11</div>
+                        <div className="text-white/60">Fullscreen</div>
                       </div>
                     </div>
                   </div>
@@ -647,7 +733,7 @@ const AppSettingsPanel: React.FC<AppSettingsPanelProps> = ({ isOpen, onClose }) 
                           defaultView: 'grid',
                           autoSave: true,
                           backupEnabled: true,
-                          thumbnailQuality: 'medium',
+                          thumbnailQuality: 'high',
                           gridColumns: 4,
                           showFileExtensions: true,
                           showFileSizes: true,
@@ -657,6 +743,12 @@ const AppSettingsPanel: React.FC<AppSettingsPanelProps> = ({ isOpen, onClose }) 
                           imageTransitions: true,
                           enableGestures: true,
                           doubleClickAction: 'open',
+                          cardSpacing: 16,
+                          borderRadius: 12,
+                          showMetadata: true,
+                          enableVirtualization: true,
+                          preloadThumbnails: true,
+                          maxThumbnailSize: 400,
                         });
                         alert('Settings reset to defaults');
                       }}
@@ -665,6 +757,28 @@ const AppSettingsPanel: React.FC<AppSettingsPanelProps> = ({ isOpen, onClose }) 
                       <RotateCcw className="h-4 w-4 mr-2" />
                       Reset to Defaults
                     </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-4">Debug Information</h3>
+                  <div className="bg-white/5 rounded-lg p-4 space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-white/70">App Version:</span>
+                      <span className="text-white">1.0.0</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-white/70">Build:</span>
+                      <span className="text-white">2024.01.15</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-white/70">Platform:</span>
+                      <span className="text-white">Web</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-white/70">Browser:</span>
+                      <span className="text-white">{navigator.userAgent.split(' ')[0]}</span>
+                    </div>
                   </div>
                 </div>
               </div>

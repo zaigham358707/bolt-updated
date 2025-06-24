@@ -51,6 +51,7 @@ interface EnhancedSidebarProps {
   onShowCategorization: () => void;
   onShowAnalytics: () => void;
   onShowAICategorization?: () => void;
+  onShowSettings?: () => void;
 }
 
 const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({
@@ -60,7 +61,8 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({
   onSearch,
   onShowCategorization,
   onShowAnalytics,
-  onShowAICategorization
+  onShowAICategorization,
+  onShowSettings
 }) => {
   const { 
     categories, 
@@ -467,6 +469,7 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({
             </div>
 
             <Button
+              onClick={onShowSettings}
               variant="ghost"
               className="w-full justify-start text-white/80 hover:bg-white/10 hover:text-white"
             >
@@ -477,6 +480,7 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({
         ) : (
           <div className="flex flex-col items-center gap-2">
             <Button
+              onClick={onShowSettings}
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-white/50 hover:bg-white/10 hover:text-white"

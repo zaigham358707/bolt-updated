@@ -4,6 +4,7 @@ import { FixedSizeGrid as Grid } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import FileCard, { FileItem } from './file-card';
 import { cn } from '@/lib/utils';
+import { useAppStore } from '@/store/useAppStore';
 
 interface FileGridProps {
   files: FileItem[];
@@ -34,6 +35,7 @@ const FileGrid: React.FC<FileGridProps> = ({
   sortBy,
   sortOrder
 }) => {
+  const { preferences } = useAppStore();
   const [draggedFiles, setDraggedFiles] = useState<Set<string>>(new Set());
 
   const filteredAndSortedFiles = useMemo(() => {
@@ -83,6 +85,24 @@ const FileGrid: React.FC<FileGridProps> = ({
     setDraggedFiles(new Set());
   };
 
+  // Empty state
+  if (filteredAndSortedFiles.length === 0) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center text-white/50">
+          <div className="text-6xl mb-4">📁</div>
+          <h3 className="text-xl font-semibold mb-2">No files found</h3>
+          <p className="text-white/40">
+            {files.length === 0 
+              ? "Upload some files to get started"
+              : "Try adjusting your search or filters"
+            }
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (viewMode === 'list') {
     return (
       <div className="h-full overflow-auto">
@@ -121,9 +141,30 @@ const FileGrid: React.FC<FileGridProps> = ({
     );
   }
 
-  const CARD_WIDTH = 300;
-  const CARD_HEIGHT = 280;
-  const GAP = 16;
+  // Calculate grid dimensions based on preferences
+  const getCardDimensions = () => {
+    const spacing = preferences.cardSpacing || 16;
+    let cardWidth = 280;
+    let cardHeight = 320;
+
+    switch (preferences.gridSize) {
+      case 'small':
+        cardWidth = 220;
+        cardHeight = 260;
+        break;
+      case 'large':
+        cardWidth = 340;
+        cardHeight = 380;
+        break;
+      default:
+        cardWidth = 280;
+        cardHeight = 320;
+    }
+
+    return { cardWidth, cardHeight, spacing };
+  };
+
+  const { cardWidth, cardHeight, spacing } = getCardDimensions();
 
   const Cell = ({ columnIndex, rowIndex, style, data }: any) => {
     const { files, columnsPerRow } = data;
@@ -136,16 +177,16 @@ const FileGrid: React.FC<FileGridProps> = ({
       <div
         style={{
           ...style,
-          left: (style.left as number) + GAP / 2,
-          top: (style.top as number) + GAP / 2,
-          width: (style.width as number) - GAP,
-          height: (style.height as number) - GAP,
+          left: (style.left as number) + spacing / 2,
+          top: (style.top as number) + spacing / 2,
+          width: (style.width as number) - spacing,
+          height: (style.height as number) - spacing,
         }}
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.2, delay: fileIndex * 0.02 }}
+          transition={{ duration: 0.2, delay: fileIndex * 0.01 }}
           className="h-full"
         >
           <FileCard
@@ -165,30 +206,68 @@ const FileGrid: React.FC<FileGridProps> = ({
   };
 
   return (
-    <div className="h-full p-4">
-      <AutoSizer>
-        {({ height, width }) => {
-          const columnsPerRow = Math.floor(width / (CARD_WIDTH + GAP));
-          const rowCount = Math.ceil(filteredAndSortedFiles.length / columnsPerRow);
+    <div className="h-full" style={{ padding: spacing / 2 }}>
+      {preferences.enableVirtualization ? (
+        <AutoSizer>
+          {({ height, width }) => {
+            const columnsPerRow = Math.max(1, Math.floor(width / (cardWidth + spacing)));
+            const rowCount = Math.ceil(filteredAndSortedFiles.length / columnsPerRow);
 
-          return (
-            <Grid
-              height={height}
-              width={width}
-              columnCount={columnsPerRow}
-              columnWidth={width / columnsPerRow}
-              rowCount={rowCount}
-              rowHeight={CARD_HEIGHT + GAP}
-              itemData={{
-                files: filteredAndSortedFiles,
-                columnsPerRow,
-              }}
-            >
-              {Cell}
-            </Grid>
-          );
-        }}
-      </AutoSizer>
+            return (
+              <Grid
+                height={height}
+                width={width}
+                columnCount={columnsPerRow}
+                columnWidth={width / columnsPerRow}
+                rowCount={rowCount}
+                rowHeight={cardHeight + spacing}
+                itemData={{
+                  files: filteredAndSortedFiles,
+                  columnsPerRow,
+                }}
+                overscanRowCount={2}
+                overscanColumnCount={1}
+              >
+                {Cell}
+              </Grid>
+            );
+          }}
+        </AutoSizer>
+      ) : (
+        <div 
+          className="grid gap-4 auto-rows-max overflow-auto h-full p-4"
+          style={{
+            gridTemplateColumns: `repeat(auto-fill, minmax(${cardWidth}px, 1fr))`,
+            gap: `${spacing}px`
+          }}
+        >
+          <AnimatePresence mode="popLayout">
+            {filteredAndSortedFiles.map((file, index) => (
+              <motion.div
+                key={file.id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.2, delay: index * 0.01 }}
+                layout
+                style={{ height: `${cardHeight}px` }}
+              >
+                <FileCard
+                  file={file}
+                  isSelected={selectedFiles.has(file.id)}
+                  onSelect={onFileSelect}
+                  onPlay={onFilePlay}
+                  onToggleFavorite={onToggleFavorite}
+                  onDownload={onDownload}
+                  onShare={onShare}
+                  onPreview={onFilePreview}
+                  viewMode="grid"
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 };

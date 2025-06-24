@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ZoomIn, ZoomOut, RotateCw, Download, Heart, Share2, ChevronLeft, ChevronRight, Maximize, Info, Settings, Grid, Eye, EyeOff, Crop, Palette, Filter, Sun, Contrast, Droplets, Zap, RotateCcw, FlipHorizontal, FlipVertical, Move, MousePointer, Square, Circle, Home, Folder, Copy, Trash2, Edit, Maximize2, Minimize2, Monitor, Smartphone, Tablet, Fullscreen, Fullscreen as FullscreenExit } from 'lucide-react';
+import { X, ZoomIn, ZoomOut, RotateCw, Download, Heart, Share2, ChevronLeft, ChevronRight, Maximize, Info, Settings, Grid, Eye, EyeOff, Crop, Palette, Filter, Sun, Contrast, Droplets, Zap, RotateCcw, FlipHorizontal, FlipVertical, Move, MousePointer, Square, Circle, Home, Folder, Copy, Trash2, Edit, Maximize2, Minimize2, Monitor, Smartphone, Tablet, Fullscreen, FullscreenExit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -563,7 +563,11 @@ const AdvancedImageViewer: React.FC<AdvancedImageViewerProps> = ({
                 <div className="w-px h-6 bg-white/20 mx-1" />
 
                 <Button
-                  onClick={() => setFitMode('fit')}
+                  onClick={() => {
+                    setFitMode('fit');
+                    setZoom(1);
+                    setPosition({ x: 0, y: 0 });
+                  }}
                   variant="ghost"
                   size="sm"
                   className={cn(
@@ -575,7 +579,11 @@ const AdvancedImageViewer: React.FC<AdvancedImageViewerProps> = ({
                 </Button>
 
                 <Button
-                  onClick={() => setFitMode('fill')}
+                  onClick={() => {
+                    setFitMode('fill');
+                    setZoom(1);
+                    setPosition({ x: 0, y: 0 });
+                  }}
                   variant="ghost"
                   size="sm"
                   className={cn(
@@ -587,7 +595,11 @@ const AdvancedImageViewer: React.FC<AdvancedImageViewerProps> = ({
                 </Button>
 
                 <Button
-                  onClick={() => setFitMode('actual')}
+                  onClick={() => {
+                    setFitMode('actual');
+                    setZoom(1);
+                    setPosition({ x: 0, y: 0 });
+                  }}
                   variant="ghost"
                   size="sm"
                   className={cn(
@@ -824,7 +836,11 @@ const AdvancedImageViewer: React.FC<AdvancedImageViewerProps> = ({
                 sepia(${sepia}%)
                 grayscale(${grayscale}%)
               `,
-              transition: isDragging ? 'none' : 'transform 0.2s ease-out'
+              transition: isDragging ? 'none' : 'transform 0.2s ease-out',
+              width: fitMode === 'fill' ? '100%' : 'auto',
+              height: fitMode === 'fill' ? '100%' : fitMode === 'fit' ? '100%' : 'auto',
+              maxWidth: fitMode === 'fit' ? '100%' : 'none',
+              maxHeight: fitMode === 'fit' ? '100%' : 'none'
             }}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}

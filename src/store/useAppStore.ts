@@ -37,6 +37,12 @@ export interface UserPreferences {
   imageTransitions: boolean;
   enableGestures: boolean;
   doubleClickAction: 'open' | 'preview' | 'select';
+  cardSpacing: number;
+  borderRadius: number;
+  showMetadata: boolean;
+  enableVirtualization: boolean;
+  preloadThumbnails: boolean;
+  maxThumbnailSize: number;
 }
 
 export interface VideoClip {
@@ -155,7 +161,7 @@ const defaultPreferences: UserPreferences = {
   defaultView: 'grid',
   autoSave: true,
   backupEnabled: true,
-  thumbnailQuality: 'medium',
+  thumbnailQuality: 'high',
   gridColumns: 4,
   showFileExtensions: true,
   showFileSizes: true,
@@ -165,186 +171,22 @@ const defaultPreferences: UserPreferences = {
   imageTransitions: true,
   enableGestures: true,
   doubleClickAction: 'open',
+  cardSpacing: 16,
+  borderRadius: 12,
+  showMetadata: true,
+  enableVirtualization: true,
+  preloadThumbnails: true,
+  maxThumbnailSize: 400,
 };
-
-// Sample data with proper thumbnails and video files
-const sampleFiles: FileItem[] = [
-  {
-    id: '1',
-    name: 'Arijit Singh - Tum Hi Ho.mp4',
-    type: 'video',
-    size: 45678912,
-    duration: 240,
-    thumbnail: 'https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=400&h=300',
-    createdAt: new Date('2024-01-15'),
-    modifiedAt: new Date('2024-01-15'),
-    isFavorite: true,
-    tags: ['music', 'bollywood', 'arijit singh'],
-    metadata: {
-      width: 1920,
-      height: 1080,
-      resolution: '1080p',
-      codec: 'H.264',
-      bitrate: '2.5 Mbps'
-    }
-  },
-  {
-    id: '2',
-    name: 'Nature Documentary 4K.mp4',
-    type: 'video',
-    size: 1234567890,
-    duration: 3600,
-    thumbnail: 'https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=400&h=300',
-    createdAt: new Date('2024-01-10'),
-    modifiedAt: new Date('2024-01-12'),
-    isFavorite: false,
-    tags: ['nature', 'documentary', '4k'],
-    metadata: {
-      width: 3840,
-      height: 2160,
-      resolution: '4K',
-      codec: 'H.265',
-      bitrate: '15 Mbps'
-    }
-  },
-  {
-    id: '3',
-    name: 'Sunset Landscape.jpg',
-    type: 'image',
-    size: 5432109,
-    thumbnail: 'https://images.pexels.com/photos/358482/pexels-photo-358482.jpeg?auto=compress&cs=tinysrgb&w=400&h=300',
-    createdAt: new Date('2024-01-08'),
-    modifiedAt: new Date('2024-01-08'),
-    isFavorite: true,
-    tags: ['landscape', 'sunset', 'photography'],
-    metadata: {
-      width: 4000,
-      height: 3000,
-      resolution: '4000x3000'
-    }
-  },
-  {
-    id: '4',
-    name: 'Mountain View.jpg',
-    type: 'image',
-    size: 3456789,
-    thumbnail: 'https://images.pexels.com/photos/1366919/pexels-photo-1366919.jpeg?auto=compress&cs=tinysrgb&w=400&h=300',
-    createdAt: new Date('2024-01-07'),
-    modifiedAt: new Date('2024-01-07'),
-    isFavorite: false,
-    tags: ['mountain', 'landscape', 'nature'],
-    metadata: {
-      width: 3000,
-      height: 2000,
-      resolution: '3000x2000'
-    }
-  },
-  {
-    id: '5',
-    name: 'Ocean Waves.jpg',
-    type: 'image',
-    size: 4567890,
-    thumbnail: 'https://images.pexels.com/photos/1032650/pexels-photo-1032650.jpeg?auto=compress&cs=tinysrgb&w=400&h=300',
-    createdAt: new Date('2024-01-06'),
-    modifiedAt: new Date('2024-01-06'),
-    isFavorite: true,
-    tags: ['ocean', 'waves', 'nature'],
-    metadata: {
-      width: 3500,
-      height: 2500,
-      resolution: '3500x2500'
-    }
-  },
-  {
-    id: '6',
-    name: 'City Lights.jpg',
-    type: 'image',
-    size: 2345678,
-    thumbnail: 'https://images.pexels.com/photos/1519088/pexels-photo-1519088.jpeg?auto=compress&cs=tinysrgb&w=400&h=300',
-    createdAt: new Date('2024-01-05'),
-    modifiedAt: new Date('2024-01-05'),
-    isFavorite: false,
-    tags: ['city', 'lights', 'urban'],
-    metadata: {
-      width: 2800,
-      height: 1800,
-      resolution: '2800x1800'
-    }
-  },
-  {
-    id: '7',
-    name: 'Arijit Singh - Agar Tum Saath Ho.mp3',
-    type: 'audio',
-    size: 8765432,
-    duration: 280,
-    thumbnail: 'https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=400&h=300',
-    createdAt: new Date('2024-01-05'),
-    modifiedAt: new Date('2024-01-05'),
-    isFavorite: false,
-    tags: ['music', 'bollywood', 'arijit singh', 'audio'],
-    metadata: {
-      bitrate: '320 kbps'
-    }
-  },
-  {
-    id: '8',
-    name: 'Project Report.pdf',
-    type: 'document',
-    size: 2345678,
-    thumbnail: 'https://images.pexels.com/photos/590016/pexels-photo-590016.jpg?auto=compress&cs=tinysrgb&w=400&h=300',
-    createdAt: new Date('2024-01-03'),
-    modifiedAt: new Date('2024-01-03'),
-    isFavorite: false,
-    tags: ['document', 'report', 'work']
-  },
-  {
-    id: '9',
-    name: 'Shreya Ghoshal - Deewani Mastani.mp4',
-    type: 'video',
-    size: 67890123,
-    duration: 320,
-    thumbnail: 'https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=400&h=300',
-    createdAt: new Date('2024-01-20'),
-    modifiedAt: new Date('2024-01-20'),
-    isFavorite: true,
-    tags: ['music', 'bollywood', 'shreya ghoshal'],
-    metadata: {
-      width: 1920,
-      height: 1080,
-      resolution: '1080p',
-      codec: 'H.264',
-      bitrate: '3.0 Mbps'
-    }
-  },
-  {
-    id: '10',
-    name: 'Rahat Fateh Ali Khan - Zaroori Tha.mp4',
-    type: 'video',
-    size: 89012345,
-    duration: 290,
-    thumbnail: 'https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=400&h=300',
-    createdAt: new Date('2024-01-18'),
-    modifiedAt: new Date('2024-01-18'),
-    isFavorite: false,
-    tags: ['music', 'sufi', 'rahat fateh ali khan'],
-    metadata: {
-      width: 1920,
-      height: 1080,
-      resolution: '1080p',
-      codec: 'H.264',
-      bitrate: '2.8 Mbps'
-    }
-  }
-];
 
 export const useAppStore = create<AppState>()(
   immer((set, get) => ({
-    // Initial State with sample data
-    files: sampleFiles,
+    // Initial State - Fresh start with no files
+    files: [],
     selectedFiles: new Set(),
     favoriteClips: [],
     categories: [],
-    tags: ['music', 'bollywood', 'nature', 'documentary', '4k', 'landscape', 'photography', 'audio', 'document', 'work', 'mountain', 'ocean', 'waves', 'city', 'lights', 'urban', 'arijit singh', 'shreya ghoshal', 'rahat fateh ali khan', 'sufi'],
+    tags: [],
     searchQuery: '',
     searchFilters: [],
     searchHistory: [],
@@ -354,9 +196,9 @@ export const useAppStore = create<AppState>()(
     sortOrder: 'asc',
     preferences: defaultPreferences,
     analytics: {
-      totalFiles: sampleFiles.length,
-      totalSize: sampleFiles.reduce((sum, file) => sum + file.size, 0),
-      mostUsedTags: ['music', 'bollywood', 'nature'],
+      totalFiles: 0,
+      totalSize: 0,
+      mostUsedTags: [],
       recentActivity: [],
     },
 
