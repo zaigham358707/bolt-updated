@@ -2,44 +2,7 @@
 
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { 
-  Play, 
-  Pause, 
-  Volume2, 
-  Volume1, 
-  VolumeX, 
-  Maximize, 
-  Settings,
-  SkipBack,
-  SkipForward,
-  Heart,
-  Tag,
-  Scissors,
-  RotateCcw,
-  RotateCw,
-  Maximize2,
-  Minimize2,
-  PictureInPicture,
-  Download,
-  Share2,
-  Bookmark,
-  Clock,
-  Layers,
-  Zap,
-  Monitor,
-  Headphones,
-  Eye,
-  EyeOff,
-  MousePointer,
-  Repeat,
-  Shuffle,
-  FastForward,
-  Rewind,
-  Square,
-  X,
-  Fullscreen,
-  FullscreenExit
-} from "lucide-react";
+import { Play, Pause, Volume2, Volume1, VolumeX, Maximize, Settings, SkipBack, SkipForward, Heart, Tag, Scissors, RotateCcw, RotateCw, Maximize2, Minimize2, PictureInPicture, Download, Share2, Bookmark, Clock, Layers, Zap, Monitor, Headphones, Eye, EyeOff, MousePointer, Repeat, Shuffle, FastForward, Rewind, Square, X, Fullscreen, Fullscreen as FullscreenExit } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/useAppStore";
