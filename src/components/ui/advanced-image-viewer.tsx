@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ZoomIn, ZoomOut, RotateCw, Download, Heart, Share2, ChevronLeft, ChevronRight, Maximize, Info, Settings, Grid, Eye, EyeOff, Crop, Palette, Filter, Sun, Contrast, Droplets, Zap, RotateCcw, FlipHorizontal, FlipVertical, Move, MousePointer, Square, Circle, Home, Folder, Copy, Trash2, Edit, Maximize2, Minimize2, Monitor, Smartphone, Tablet, Fullscreen, FullscreenExit } from 'lucide-react';
+import { X, ZoomIn, ZoomOut, RotateCw, Download, Heart, Share2, ChevronLeft, ChevronRight, Maximize, Info, Settings, Grid, Eye, EyeOff, Crop, Palette, Filter, Sun, Contrast, Droplets, Zap, RotateCcw, FlipHorizontal, FlipVertical, Move, MousePointer, Square, Circle, Home, Folder, Copy, Trash2, Edit, Maximize2, Minimize2, Monitor, Smartphone, Tablet, Fullscreen, Fullscreen as FullscreenExit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
